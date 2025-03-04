@@ -1,35 +1,42 @@
-getgenv().black beard = function()
+getgenv().black_beard = function()
     local url = 'https://anbeo.onrender.com/api/status'
     local chooses
     local foundServers = game:GetService('HttpService'):JSONDecode(game:HttpGet(url))
-    for i,v in foundServers do 
+    
+    for i, v in pairs(foundServers) do 
         if v.jobId ~= game.JobId then 
             chooses = v
         end
     end
-    game:GetService("TeleportService"):TeleportToPlaceInstance(7449423635, chooses.jobId, game.Players.LocalPlayer)
+    
+    if chooses then
+        game:GetService("TeleportService"):TeleportToPlaceInstance(7449423635, chooses.jobId, game.Players.LocalPlayer)
+    end
 end
+
 function CheckBossAttack()
-    for _,Boss in pairs(game.Workspace.Enemies:GetChildren()) do
-        if Boss.Name == "black beard" or Boss.Name == "black beard" and DetectingPart(Boss) and Boss.Humanoid.Health > 0 then
+    for _, Boss in pairs(game.Workspace.Enemies:GetChildren()) do
+        if (Boss.Name == "black beard") and DetectingPart(Boss) and Boss.Humanoid.Health > 0 then
             return Boss
         end
     end
-    for _,Boss in pairs(game.ReplicatedStorage:GetChildren()) do
-        if Boss.Name == "black beard" or Boss.Name == "black beard" then
+    for _, Boss in pairs(game.ReplicatedStorage:GetChildren()) do
+        if Boss.Name == "black beard" then
             return Boss
         end
     end
 end
+
 function DetectingPart(v1)
     return v1 and v1:FindFirstChild("HumanoidRootPart") and v1:FindFirstChild("Humanoid")
 end
+
 spawn(function()
-  while task.wait() do
-    pcall(function()
-      if not CheckBossAttack() then
-        return black beard()
-      end
-    end)
-  end
-end)     
+    while task.wait() do
+        pcall(function()
+            if not CheckBossAttack() then
+                return black_beard()
+            end
+        end)
+    end
+end)
