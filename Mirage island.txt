@@ -1,42 +1,27 @@
-getgenv().MirageIsland = function()
-    local url = 'https://andepzaihub.onrender.com/api/status'
-    local chooses
-    local foundServers = game:GetService('HttpService'):JSONDecode(game:HttpGet(url))
-    
-    for i, v in pairs(foundServers) do 
-        if v.jobId ~= game.JobId then 
-            chooses = v
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+
+local function getServers()
+    local url = "https://games.roblox.com/v1/games/2753915549/servers/Public?sortOrder=Asc&limit=100"
+    local response = HttpService:GetAsync(url)
+    local data = HttpService:JSONDecode(response)
+
+    for _, server in pairs(data.data) do
+        if server.playing < server.maxPlayers then
+            return server.id
         end
     end
-    
-    if chooses then
-        game:GetService("TeleportService"):TeleportToPlaceInstance(7449423635, chooses.jobId, game.Players.LocalPlayer)
+    return nil
+end
+
+local function hopServer()
+    local serverId = getServers()
+    if serverId then
+        TeleportService:TeleportToPlaceInstance(2753915549, serverId, Players.LocalPlayer)
+    else
+        print("Không tìm thấy server phù hợp, thử lại sau!")
     end
 end
 
-function CheckIsland()
-    for _, Island in pairs(game.Workspace.Enemies:GetChildren()) do
-        if Island.Name == "Mirage Island" and DetectingPart(Island) and Island.Humanoid.Health > 0 then
-            return Island
-        end
-    end
-    for _, Island in pairs(game.ReplicatedStorage:GetChildren()) do
-        if Island.Name == "Mirage Island" or Island.Name == "Prehistoric Island" then
-            return Island
-        end
-    end
-end
-
-function DetectingPart(v1)
-    return v1 and v1:FindFirstChild("HumanoidRootPart") and v1:FindFirstChild("Humanoid")
-end
-
-spawn(function()
-    while task.wait() do
-        pcall(function()
-            if not CheckIsland() then
-                return MirageIsland()
-            end
-        end)
-    end
-end)
+hopServer()
