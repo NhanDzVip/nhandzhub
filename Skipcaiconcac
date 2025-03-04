@@ -1,0 +1,45 @@
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+-- Kiểm tra xem NPC có xuất hiện trong map không
+local function checkNPC()
+    for _, npc in pairs(Workspace:GetChildren()) do
+        if npc:IsA("Model") and npc.Name == "Sword Dealer of the East" then
+            print("✅ NPC Sword Dealer of the East đã xuất hiện!")
+            return true
+        end
+    end
+    print("❌ NPC không có trong server này, hop server...")
+    return false
+end
+
+-- Lấy danh sách server để hop
+local function getServers()
+    local url = "https://games.roblox.com/v1/games/2753915549/servers/Public?sortOrder=Asc&limit=100"
+    local response = HttpService:GetAsync(url)
+    local data = HttpService:JSONDecode(response)
+
+    for _, server in pairs(data.data) do
+        if server.playing < server.maxPlayers then
+            return server.id
+        end
+    end
+    return nil
+end
+
+-- Tự động hop server
+local function hopServer()
+    local serverId = getServers()
+    if serverId then
+        TeleportService:TeleportToPlaceInstance(2753915549, serverId, Players.LocalPlayer)
+    else
+        print("Không tìm thấy server phù hợp, thử lại sau!")
+    end
+end
+
+-- Chạy script kiểm tra & hop server nếu cần
+if not checkNPC() then
+    hopServer()
+end
