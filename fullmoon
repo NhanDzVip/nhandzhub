@@ -1,0 +1,60 @@
+-- Kiểm tra Full Moon trong Blox Fruits và auto hop server
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Hàm kiểm tra Full Moon
+function isFullMoon()
+    local Lighting = game:GetService("Lighting")
+    return Lighting:FindFirstChild("FullMoon") ~= nil
+end
+
+-- Hàm lấy danh sách server
+function getServers()
+    local servers = {}
+    local placeID = game.PlaceId
+    local url = "https://games.roblox.com/v1/games/" .. placeID .. "/servers/Public?sortOrder=Desc&limit=100"
+    
+    local success, response = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet(url))
+    end)
+
+    if success and response and response.data then
+        for _, server in ipairs(response.data) do
+            if server.playing < server.maxPlayers then
+                table.insert(servers, server.id)
+            end
+        end
+    end
+
+    return servers
+end
+
+-- Hàm tự động hop server
+function autoHop()
+    if isFullMoon() then
+        print("🌕 Full Moon đã xuất hiện! Dừng hop server.")
+        return
+    end
+
+    print("🔄 Đang tìm server có Full Moon...")
+    local servers = getServers()
+    
+    for _, serverID in ipairs(servers) do
+        print("🚀 Đang chuyển server...")
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, serverID, LocalPlayer)
+        wait(10) -- Đợi để load game
+        if isFullMoon() then
+            print("✅ Đã tìm thấy server có Full Moon!")
+            return
+        end
+    end
+
+    print("❌ Không tìm thấy Full Moon, thử lại...")
+    wait(5)
+    autoHop() -- Lặp lại nếu chưa tìm thấy
+end
+
+-- Chạy script
+autoHop()
