@@ -11,7 +11,7 @@ getgenv().MirageIsland = function()
 end
 function CheckIsland()
     for _,Island in pairs(game.Workspace.Enemies:GetChildren()) do
-        if Island.Name == "Mirage Island" or Boss.Name == "Prehistoric island" and DetectingPart(Island) and Island.Humanoid.Health > 0 then
+        if Island.Name == "Mirage Island" or Island.Name == "Prehistoric island" and DetectingPart(Island) and Island.Humanoid.Health > 0 then
             return Island
         end
     end
