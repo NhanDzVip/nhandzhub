@@ -1,42 +1,82 @@
-getgenv().black_beard = function()
-    local url = 'https://anbeo.onrender.com/api/status'
-    local chooses
-    local foundServers = game:GetService('HttpService'):JSONDecode(game:HttpGet(url))
-    
-    for i, v in pairs(foundServers) do 
-        if v.jobId ~= game.JobId then 
-            chooses = v
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+-- Kiểm tra xem Boss Râu Đen có trong server không
+local function findBlackbeard()
+    for _, npc in pairs(Workspace:GetChildren()) do
+        if npc:IsA("Model") and npc.Name == "Blackbeard" then
+            print("✅ Boss Râu Đen đã xuất hiện!")
+            return npc
         end
     end
-    
-    if chooses then
-        game:GetService("TeleportService"):TeleportToPlaceInstance(7449423635, chooses.jobId, game.Players.LocalPlayer)
+    print("❌ Không tìm thấy Boss, hop server...")
+    return nil
+end
+
+-- Lấy danh sách server để hop
+local function getServers()
+    local url = "https://games.roblox.com/v1/games/2753915549/servers/Public?sortOrder=Asc&limit=100"
+    local response = HttpService:GetAsync(url)
+    local data = HttpService:JSONDecode(response)
+
+    for _, server in pairs(data.data) do
+        if server.playing < server.maxPlayers then
+            return server.id
+        end
+    end
+    return nil
+end
+
+-- Tự động hop server
+local function hopServer()
+    local serverId = getServers()
+    if serverId then
+        print("🔄 Đang chuyển sang server mới...")
+        TeleportService:TeleportToPlaceInstance(2753915549, serverId, Players.LocalPlayer)
+    else
+        print("❌ Không tìm thấy server phù hợp, thử lại sau!")
     end
 end
 
-function CheckBossAttack()
-    for _, Boss in pairs(game.Workspace.Enemies:GetChildren()) do
-        if (Boss.Name == "black beard") and DetectingPart(Boss) and Boss.Humanoid.Health > 0 then
-            return Boss
-        end
-    end
-    for _, Boss in pairs(game.ReplicatedStorage:GetChildren()) do
-        if Boss.Name == "black beard" then
-            return Boss
+-- Dịch chuyển đến Boss
+local function moveToBoss(boss)
+    if boss then
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            print("🚀 Đang di chuyển đến Boss...")
+            character.HumanoidRootPart.CFrame = boss.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0) -- Bay lên trên boss một chút
         end
     end
 end
 
-function DetectingPart(v1)
-    return v1 and v1:FindFirstChild("HumanoidRootPart") and v1:FindFirstChild("Humanoid")
-end
-
-spawn(function()
-    while task.wait() do
-        pcall(function()
-            if not CheckBossAttack() then
-                return black_beard()
+-- Tấn công Boss liên tục
+local function attackBoss(boss)
+    if boss then
+        print("⚔️ Bắt đầu tấn công Boss Râu Đen...")
+        RunService.RenderStepped:Connect(function()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = boss.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+            end
+            -- Gửi lệnh đánh
+            local CombatEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes"):FindFirstChild("Combat")
+            if CombatEvent then
+                CombatEvent:FireServer("Light_Beam") -- Nếu dùng Light Fruit
+                CombatEvent:FireServer("Melee") -- Nếu đánh cận chiến
             end
         end)
     end
-end)
+end
+
+-- Chạy script: kiểm tra boss, đánh hoặc hop server
+local boss = findBlackbeard()
+if boss then
+    moveToBoss(boss)
+    attackBoss(boss)
+else
+    hopServer()
+end
