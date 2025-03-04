@@ -1,0 +1,91 @@
+-- Tự động hop server có Haki Legendary và mua
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+-- Hàm kiểm tra NPC bán Haki Legendary
+function isHakiLegendaryAvailable()
+    for _, npc in pairs(workspace:GetChildren()) do
+        if npc:IsA("Model") and npc:FindFirstChild("HumanoidRootPart") then
+            if string.find(npc.Name, "Legendary Haki Seller") then
+                print("✅ Tìm thấy NPC bán Haki Legendary!")
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Hàm tự động mua Haki nếu có đủ tiền
+function buyHakiLegendary()
+    local money = LocalPlayer.Data.Beli.Value -- Lấy số tiền hiện tại
+    local hakiPrice = 2500000 -- Giá Haki Legendary (có thể thay đổi)
+
+    if money >= hakiPrice then
+        print("💰 Đủ tiền, đang mua Haki Legendary...")
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("BuyLegendaryHaki")
+        wait(2)
+        if isHakiLegendaryAvailable() == false then
+            print("🎉 Đã mua thành công Haki Legendary!")
+            return true
+        end
+    else
+        print("❌ Không đủ tiền để mua Haki Legendary!")
+    end
+    return false
+end
+
+-- Hàm lấy danh sách server
+function getServers()
+    local servers = {}
+    local placeID = game.PlaceId
+    local url = "https://games.roblox.com/v1/games/" .. placeID .. "/servers/Public?sortOrder=Desc&limit=100"
+
+    local success, response = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet(url))
+    end)
+
+    if success and response and response.data then
+        for _, server in ipairs(response.data) do
+            if server.playing < server.maxPlayers then
+                table.insert(servers, server.id)
+            end
+        end
+    end
+
+    return servers
+end
+
+-- Hàm tự động hop server
+function autoHop()
+    if isHakiLegendaryAvailable() then
+        if buyHakiLegendary() then
+            print("✅ Đã mua Haki Legendary, dừng hop server.")
+            return
+        end
+    end
+
+    print("🔄 Đang tìm server có Haki Legendary...")
+    local servers = getServers()
+
+    for _, serverID in ipairs(servers) do
+        print("🚀 Đang chuyển server...")
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, serverID, LocalPlayer)
+        wait(10) -- Đợi để load game
+        if isHakiLegendaryAvailable() then
+            if buyHakiLegendary() then
+                print("✅ Đã tìm thấy và mua Haki Legendary!")
+                return
+            end
+        end
+    end
+
+    print("❌ Không tìm thấy Haki Legendary, thử lại...")
+    wait(5)
+    autoHop() -- Lặp lại nếu chưa tìm thấy
+end
+
+-- Chạy script
+autoHop()
